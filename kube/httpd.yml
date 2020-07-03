@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpd
+  labels:
+          tier: httpd
+spec:
+  ports:
+  - port: 80
+  selector:
+    tier: httpd
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: httpd-pv-claim
+  labels:
+    tier: httpd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: httpd
+  labels:
+    tier: httpd
+spec:
+   replicas: 2
+   selector:
+    matchLabels:
+      tier: httpd
+   strategy:
+    type: Recreate
+   template:
+    metadata:
+      labels:
+        tier: httpd
+    spec:
+      containers:
+      - image: devil00/task6-httpd
+        name: httpd
+        ports:
+        - containerPort: 80
+          name: httpd
+        volumeMounts:
+        - name: httpd-persistent-storage
+          mountPath: /usr/local/apach2/htdocs
+      volumes:
+      - name: httpd-persistent-storage
+        persistentVolumeClaim:
+          claimName: httpd-pv-claim
